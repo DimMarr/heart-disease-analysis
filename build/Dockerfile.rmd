@@ -1,0 +1,17 @@
+# Stage 1 — Rendu du rapport Rmd
+FROM rocker/tidyverse:4.3.3 AS builder
+
+# rocker/tidyverse inclut déjà : rmarkdown, knitr, ggplot2, dplyr, tidyr, scales, forcats
+RUN Rscript -e "install.packages(c('kableExtra','corrplot','broom','gridExtra'), repos='https://cran.rstudio.com/')"
+
+WORKDIR /project
+COPY data/ data/
+COPY src/  src/
+
+RUN Rscript -e "rmarkdown::render('src/rapport.Rmd', output_dir='/project', output_file='rapport.html')"
+
+# Stage 2 — Serveur nginx (léger, fiable)
+FROM nginx:alpine
+COPY --from=builder /project/rapport.html /usr/share/nginx/html/rapport.html
+
+EXPOSE 80

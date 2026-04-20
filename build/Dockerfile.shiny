@@ -1,0 +1,16 @@
+FROM rocker/shiny:4.3.3
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libcurl4-openssl-dev \
+    libssl-dev \
+    libxml2-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN Rscript -e "install.packages(c('shinydashboard','dplyr','ggplot2','plotly','scales','forcats','tidyr'), repos='https://cran.rstudio.com/')"
+
+# Copie l'app et les données dans le répertoire Shiny
+COPY src/app.R  /srv/shiny-server/app.R
+COPY data/      /srv/shiny-server/data/
+
+EXPOSE 3838
+CMD ["/usr/bin/shiny-server"]

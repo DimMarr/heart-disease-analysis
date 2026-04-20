@@ -1,0 +1,19 @@
+services:
+
+  # Service 1 — Rapport HTML (rendu au build, servi sur :8080)
+  rapport:
+    build:
+      context: .
+      dockerfile: build/Dockerfile.rmd
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+
+  # Service 2 — Application R Shiny (interactive, sur :3838)
+  shiny:
+    build:
+      context: .
+      dockerfile: build/Dockerfile.shiny
+    ports:
+      - "3838:3838"
+    restart: unless-stopped

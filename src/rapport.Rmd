@@ -1,0 +1,501 @@
+---
+title: "Facteurs de risque des maladies cardiaques"
+subtitle: "Analyse statistique du jeu de données Heart Disease (CDC 2020)"
+author: "MARTEL Dimitri - RICHARD Dorian - MICHAULT Louis - TORRES Léo"
+date: "`r format(Sys.Date(), '%d %B %Y')`"
+output:
+  html_document:
+    theme: flatly
+    highlight: tango
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
+    toc_depth: 3
+    number_sections: true
+    df_print: paged
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo    = FALSE,
+  warning = FALSE,
+  message = FALSE,
+  fig.align = "center",
+  fig.width = 9,
+  fig.height = 5
+)
+```
+
+```{r libraries}
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(scales)
+library(knitr)
+library(kableExtra)
+library(corrplot)
+library(forcats)
+
+theme_set(
+  theme_minimal(base_size = 13) +
+    theme(
+      plot.title    = element_text(face = "bold", size = 14),
+      plot.subtitle = element_text(color = "grey50", size = 11),
+      legend.position = "bottom"
+    )
+)
+
+PALETTE_MALADIE <- c("No" = "#4CAF50", "Yes" = "#E53935")
+```
+
+```{r load-data}
+df <- read.csv("../data/heart.csv", stringsAsFactors = FALSE) %>%
+  select(-1) %>%   # supprime l'index
+  mutate(
+    HeartDisease     = factor(HeartDisease,     levels = c("No", "Yes")),
+    Smoking          = factor(Smoking,          levels = c("No", "Yes")),
+    AlcoholDrinking  = factor(AlcoholDrinking,  levels = c("No", "Yes")),
+    Stroke           = factor(Stroke,           levels = c("No", "Yes")),
+    DiffWalking      = factor(DiffWalking,      levels = c("No", "Yes")),
+    Sex              = factor(Sex),
+    Diabetic         = factor(Diabetic),
+    PhysicalActivity = factor(PhysicalActivity, levels = c("No", "Yes")),
+    GenHealth        = factor(GenHealth, levels = c("Poor", "Fair", "Good", "Very good", "Excellent")),
+    Asthma           = factor(Asthma,           levels = c("No", "Yes")),
+    KidneyDisease    = factor(KidneyDisease,    levels = c("No", "Yes")),
+    SkinCancer       = factor(SkinCancer,       levels = c("No", "Yes")),
+    AgeCategory      = factor(AgeCategory, levels = c(
+      "18-24","25-29","30-34","35-39","40-44","45-49",
+      "50-54","55-59","60-64","65-69","70-74","75-79","80 or older"
+    )),
+    Race = factor(Race)
+  )
+
+n_total   <- nrow(df)
+n_malade  <- sum(df$HeartDisease == "Yes")
+pct_malade <- round(100 * n_malade / n_total, 1)
+```
+
+---
+
+# Introduction
+
+Les maladies cardiovasculaires représentent la première cause de mortalité mondiale. Comprendre les facteurs
+de risque associés à leur développement est un enjeu majeur de santé publique.
+
+Ce rapport analyse le jeu de données **Heart Disease** issu de l'enquête américaine BRFSS 2020 (CDC),
+qui recense **`r format(n_total, big.mark = " ")` patients** décrits par **19 variables** — habitudes de vie,
+antécédents médicaux et données démographiques.
+
+**Problématique :** Quels facteurs sont les plus fortement associés au risque de développer une maladie cardiaque ?
+
+## Description des variables
+
+```{r table-variables}
+vars_desc <- tibble::tibble(
+  Variable         = names(df),
+  Type             = c("Binaire","Continue","Binaire","Binaire","Binaire","Continue",
+                       "Continue","Binaire","Catégorielle","Catégorielle","Catégorielle",
+                       "Catégorielle","Binaire","Continue","Ordinale","Binaire","Binaire","Binaire"),
+  Description      = c(
+    "Maladie cardiaque déclarée (variable cible)",
+    "Indice de masse corporelle",
+    "Fumeur (≥100 cigarettes à vie)",
+    "Consommation excessive d'alcool",
+    "Antécédent d'AVC",
+    "Jours de mauvaise santé physique (30 derniers jours)",
+    "Jours de mauvaise santé mentale (30 derniers jours)",
+    "Difficultés à marcher ou monter des escaliers",
+    "Sexe biologique",
+    "Tranche d'âge (13 niveaux)",
+    "Origine ethnique",
+    "Diabète diagnostiqué",
+    "Activité physique hors travail (30 derniers jours)",
+    "Heures de sommeil par nuit",
+    "État de santé général perçu (5 niveaux)",
+    "Asthme",
+    "Maladie rénale",
+    "Cancer de la peau"
+  )
+)
+
+kable(vars_desc, caption = "Description des 18 variables du jeu de données") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = FALSE) %>%
+  column_spec(1, bold = TRUE, color = "#1565C0") %>%
+  row_spec(1, background = "#FFF9C4")
+```
+
+---
+
+# Exploration des données
+
+## Dimensions et qualité
+
+```{r summary-quanti}
+df_quanti <- df %>% select(BMI, PhysicalHealth, MentalHealth, SleepTime)
+
+stats_quanti <- df_quanti %>%
+  summarise(across(everything(), list(
+    Min    = ~round(min(.),    2),
+    Médiane = ~round(median(.), 2),
+    Moyenne = ~round(mean(.),   2),
+    `Écart-type` = ~round(sd(.), 2),
+    Max    = ~round(max(.),    2)
+  ))) %>%
+  pivot_longer(everything(), names_to = c("Variable", ".value"), names_sep = "_")
+
+kable(stats_quanti, caption = "Statistiques descriptives des variables quantitatives") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = FALSE)
+```
+
+```{r na-check, results='asis'}
+n_na <- sum(is.na(df))
+cat(sprintf(
+  "> Le jeu de données ne contient **aucune valeur manquante** (%d NA détectés sur %d valeurs).",
+  n_na, n_total * ncol(df)
+))
+```
+
+## Déséquilibre de la variable cible
+
+```{r target-balance, fig.height=3.5}
+df %>%
+  count(HeartDisease) %>%
+  mutate(pct = n / sum(n)) %>%
+  ggplot(aes(x = HeartDisease, y = n, fill = HeartDisease)) +
+  geom_col(width = 0.5, show.legend = FALSE) +
+  geom_text(aes(label = paste0(format(n, big.mark=" "), "\n(", percent(pct, accuracy=0.1), ")")),
+            vjust = -0.4, size = 4, fontface = "bold") +
+  scale_fill_manual(values = PALETTE_MALADIE) +
+  scale_y_continuous(labels = label_number(big.mark = " "), expand = expansion(mult = c(0, 0.15))) +
+  labs(
+    title    = "Distribution de la variable cible : HeartDisease",
+    subtitle = paste0(pct_malade, "% des patients déclarent une maladie cardiaque"),
+    x = "Maladie cardiaque", y = "Nombre de patients"
+  )
+```
+
+---
+
+# Statistiques descriptives univariées
+
+## Variables quantitatives
+
+```{r histo-quanti, fig.height=7}
+df_long_quanti <- df %>%
+  select(BMI, PhysicalHealth, MentalHealth, SleepTime) %>%
+  pivot_longer(everything(), names_to = "Variable", values_to = "Valeur")
+
+labels_quanti <- c(
+  BMI            = "IMC",
+  PhysicalHealth = "Jours de mauvaise santé physique",
+  MentalHealth   = "Jours de mauvaise santé mentale",
+  SleepTime      = "Heures de sommeil / nuit"
+)
+
+df_long_quanti %>%
+  ggplot(aes(x = Valeur)) +
+  geom_histogram(fill = "#1565C0", color = "white", bins = 40, alpha = 0.85) +
+  facet_wrap(~Variable, scales = "free", labeller = labeller(Variable = labels_quanti)) +
+  scale_y_continuous(labels = label_number(big.mark = " ")) +
+  labs(
+    title    = "Distribution des variables quantitatives",
+    subtitle = "Histogrammes — effectifs bruts",
+    x = NULL, y = "Effectif"
+  )
+```
+
+## Variables qualitatives
+
+```{r barplot-quali, fig.height=9}
+quali_vars <- c("Smoking","AlcoholDrinking","Stroke","DiffWalking","Sex",
+                "Diabetic","PhysicalActivity","Asthma","KidneyDisease","SkinCancer")
+
+df %>%
+  select(all_of(quali_vars)) %>%
+  pivot_longer(everything(), names_to = "Variable", values_to = "Modalite") %>%
+  count(Variable, Modalite) %>%
+  group_by(Variable) %>%
+  mutate(pct = n / sum(n)) %>%
+  ungroup() %>%
+  ggplot(aes(x = Modalite, y = pct, fill = Modalite)) +
+  geom_col(show.legend = FALSE) +
+  geom_text(aes(label = percent(pct, accuracy = 0.1)), vjust = -0.3, size = 3) +
+  scale_y_continuous(labels = percent_format(), expand = expansion(mult = c(0, 0.15))) +
+  scale_fill_brewer(palette = "Set2") +
+  facet_wrap(~Variable, scales = "free_x", ncol = 4) +
+  labs(
+    title    = "Distribution des variables qualitatives binaires",
+    subtitle = "Proportions par modalité",
+    x = NULL, y = "Proportion"
+  ) +
+  theme(axis.text.x = element_text(size = 9))
+```
+
+```{r barplot-age, fig.height=4}
+df %>%
+  count(AgeCategory) %>%
+  mutate(pct = n / sum(n)) %>%
+  ggplot(aes(x = AgeCategory, y = pct)) +
+  geom_col(fill = "#5C6BC0", alpha = 0.85) +
+  geom_text(aes(label = percent(pct, accuracy = 0.1)), vjust = -0.3, size = 3) +
+  scale_y_continuous(labels = percent_format(), expand = expansion(mult = c(0, 0.15))) +
+  labs(
+    title = "Distribution par tranche d'âge",
+    x = "Tranche d'âge", y = "Proportion"
+  ) +
+  theme(axis.text.x = element_text(angle = 40, hjust = 1))
+```
+
+```{r barplot-race, fig.height=4}
+df %>%
+  count(Race) %>%
+  mutate(
+    pct  = n / sum(n),
+    Race = fct_reorder(Race, n)
+  ) %>%
+  ggplot(aes(x = Race, y = pct)) +
+  geom_col(fill = "#26A69A", alpha = 0.85) +
+  geom_text(aes(label = percent(pct, accuracy = 0.1)), hjust = -0.1, size = 3.5) +
+  scale_y_continuous(labels = percent_format(), expand = expansion(mult = c(0, 0.2))) +
+  coord_flip() +
+  labs(title = "Distribution par origine ethnique", x = NULL, y = "Proportion")
+```
+
+---
+
+# Analyse bivariée — HeartDisease vs facteurs de risque
+
+## Variables quantitatives
+
+```{r boxplot-quanti-maladie, fig.height=6}
+df %>%
+  select(HeartDisease, BMI, PhysicalHealth, MentalHealth, SleepTime) %>%
+  pivot_longer(-HeartDisease, names_to = "Variable", values_to = "Valeur") %>%
+  ggplot(aes(x = HeartDisease, y = Valeur, fill = HeartDisease)) +
+  geom_boxplot(alpha = 0.75, outlier.size = 0.3, outlier.alpha = 0.2) +
+  scale_fill_manual(values = PALETTE_MALADIE, name = "Maladie cardiaque") +
+  facet_wrap(~Variable, scales = "free_y", labeller = labeller(Variable = labels_quanti)) +
+  labs(
+    title    = "Variables quantitatives selon la présence de maladie cardiaque",
+    subtitle = "Comparaison des distributions par boxplots",
+    x = "Maladie cardiaque", y = NULL
+  )
+```
+
+## Taux de maladie cardiaque par facteur
+
+```{r taux-maladie-quali, fig.height=8}
+plot_taux <- function(var, label) {
+  df %>%
+    group_by(.data[[var]], HeartDisease) %>%
+    summarise(n = n(), .groups = "drop") %>%
+    group_by(.data[[var]]) %>%
+    mutate(pct = n / sum(n)) %>%
+    filter(HeartDisease == "Yes") %>%
+    ggplot(aes(x = .data[[var]], y = pct)) +
+    geom_col(fill = "#E53935", alpha = 0.8) +
+    geom_text(aes(label = percent(pct, accuracy = 0.1)), vjust = -0.3, size = 3.2) +
+    scale_y_continuous(labels = percent_format(), expand = expansion(mult = c(0, 0.15)),
+                       limits = c(0, NA)) +
+    labs(title = label, x = NULL, y = "Taux HeartDisease") +
+    theme(axis.text.x = element_text(angle = 30, hjust = 1, size = 9))
+}
+
+p1 <- plot_taux("Smoking",       "Tabagisme")
+p2 <- plot_taux("AlcoholDrinking","Alcool")
+p3 <- plot_taux("Stroke",         "Antécédent AVC")
+p4 <- plot_taux("DiffWalking",    "Difficultés à marcher")
+p5 <- plot_taux("Diabetic",       "Diabète")
+p6 <- plot_taux("PhysicalActivity","Activité physique")
+p7 <- plot_taux("GenHealth",      "Santé générale perçue")
+p8 <- plot_taux("KidneyDisease",  "Maladie rénale")
+
+gridExtra::grid.arrange(p1, p2, p3, p4, p5, p6, p7, p8, ncol = 4,
+  top = grid::textGrob(
+    "Taux de maladie cardiaque selon chaque facteur de risque",
+    gp = grid::gpar(fontface = "bold", fontsize = 13)
+  )
+)
+```
+
+## Âge, sexe et maladie cardiaque
+
+```{r heatmap-age-sex, fig.height=4.5}
+df %>%
+  group_by(AgeCategory, Sex, HeartDisease) %>%
+  summarise(n = n(), .groups = "drop") %>%
+  group_by(AgeCategory, Sex) %>%
+  mutate(pct = n / sum(n)) %>%
+  filter(HeartDisease == "Yes") %>%
+  ggplot(aes(x = AgeCategory, y = Sex, fill = pct)) +
+  geom_tile(color = "white", linewidth = 0.5) +
+  geom_text(aes(label = percent(pct, accuracy = 1)), size = 3.2, color = "white", fontface = "bold") +
+  scale_fill_gradient(low = "#FFCDD2", high = "#B71C1C", labels = percent_format(), name = "Taux") +
+  labs(
+    title    = "Taux de maladie cardiaque par tranche d'âge et sexe",
+    subtitle = "Le risque augmente fortement après 55 ans",
+    x = "Tranche d'âge", y = NULL
+  ) +
+  theme(axis.text.x = element_text(angle = 40, hjust = 1))
+```
+
+```{r barplot-race-maladie, fig.height=4}
+df %>%
+  group_by(Race, HeartDisease) %>%
+  summarise(n = n(), .groups = "drop") %>%
+  group_by(Race) %>%
+  mutate(pct = n / sum(n)) %>%
+  ggplot(aes(x = fct_reorder(Race, pct, function(x) x[2]), y = pct, fill = HeartDisease)) +
+  geom_col(position = "fill") +
+  scale_fill_manual(values = PALETTE_MALADIE, name = "Maladie cardiaque") +
+  scale_y_continuous(labels = percent_format()) +
+  coord_flip() +
+  labs(
+    title = "Répartition de la maladie cardiaque par origine ethnique",
+    x = NULL, y = "Proportion"
+  )
+```
+
+---
+
+# Corrélations entre variables quantitatives
+
+```{r corr-matrix, fig.height=5, fig.width=6}
+df_cor <- df %>%
+  mutate(
+    HeartDisease_bin = as.integer(HeartDisease == "Yes"),
+    Smoking_bin      = as.integer(Smoking == "Yes"),
+    Stroke_bin       = as.integer(Stroke == "Yes"),
+    Diabetic_bin     = as.integer(Diabetic %in% c("Yes", "Yes (during pregnancy)")),
+    DiffWalking_bin  = as.integer(DiffWalking == "Yes"),
+    KidneyDisease_bin= as.integer(KidneyDisease == "Yes"),
+    Age_num          = as.integer(AgeCategory)
+  ) %>%
+  select(HeartDisease_bin, BMI, PhysicalHealth, MentalHealth, SleepTime,
+         Age_num, Smoking_bin, Stroke_bin, Diabetic_bin, DiffWalking_bin, KidneyDisease_bin)
+
+colnames(df_cor) <- c("Maladie\ncardiaque","IMC","Santé\nphysique","Santé\nmentale",
+                      "Sommeil","Âge","Tabac","AVC","Diabète","Diff.\nmarche","Rein")
+
+M <- cor(df_cor)
+corrplot(M,
+  method   = "color",
+  type     = "upper",
+  tl.cex   = 0.8,
+  tl.col   = "black",
+  addCoef.col = "black",
+  number.cex  = 0.65,
+  col      = colorRampPalette(c("#1565C0","white","#C62828"))(200),
+  title    = "Matrice de corrélation des variables (encodées numériquement)",
+  mar      = c(0,0,2,0)
+)
+```
+
+---
+
+# Modélisation — Régression logistique
+
+```{r logit-model}
+df_model <- df %>%
+  mutate(
+    HeartDisease_bin = as.integer(HeartDisease == "Yes"),
+    Age_num          = as.integer(AgeCategory),
+    Diabetic_bin     = as.integer(Diabetic %in% c("Yes", "Yes (during pregnancy)"))
+  )
+
+set.seed(42)
+df_sample <- df_model %>% sample_n(50000)
+
+modele <- glm(
+  HeartDisease_bin ~ Age_num + BMI + Smoking + Stroke + DiffWalking +
+    PhysicalHealth + MentalHealth + SleepTime + Sex + GenHealth +
+    Diabetic_bin + KidneyDisease + PhysicalActivity,
+  data   = df_sample,
+  family = binomial(link = "logit")
+)
+```
+
+```{r odds-ratio-plot, fig.height=6}
+coefs <- broom::tidy(modele, exponentiate = TRUE, conf.int = TRUE) %>%
+  filter(term != "(Intercept)") %>%
+  mutate(
+    term = recode(term,
+      Age_num             = "Âge (par tranche)",
+      BMI                 = "IMC",
+      SmokingYes          = "Tabagisme",
+      StrokeYes           = "Antécédent AVC",
+      DiffWalkingYes      = "Difficultés à marcher",
+      PhysicalHealth      = "Jours mauvaise santé physique",
+      MentalHealth        = "Jours mauvaise santé mentale",
+      SleepTime           = "Heures de sommeil",
+      SexMale             = "Sexe masculin",
+      `GenHealthFair`     = "Santé : Passable",
+      `GenHealthGood`     = "Santé : Bonne",
+      `GenHealthPoor`     = "Santé : Mauvaise",
+      `GenHealthVery good`= "Santé : Très bonne",
+      Diabetic_bin        = "Diabète",
+      KidneyDiseaseYes    = "Maladie rénale",
+      PhysicalActivityYes = "Activité physique"
+    ),
+    Significatif = p.value < 0.05,
+    term = fct_reorder(term, estimate)
+  )
+
+ggplot(coefs, aes(x = estimate, y = term, color = Significatif)) +
+  geom_vline(xintercept = 1, linetype = "dashed", color = "grey50") +
+  geom_errorbarh(aes(xmin = conf.low, xmax = conf.high), height = 0.3, alpha = 0.6) +
+  geom_point(size = 3) +
+  scale_color_manual(values = c("FALSE" = "grey60", "TRUE" = "#C62828"),
+                     labels = c("Non significatif (p≥0.05)", "Significatif (p<0.05)")) +
+  scale_x_log10() +
+  labs(
+    title    = "Odds Ratios — Régression logistique",
+    subtitle = "Facteurs associés à la maladie cardiaque (n = 50 000, IC 95%)",
+    x = "Odds Ratio (échelle log)", y = NULL,
+    color = NULL
+  ) +
+  theme(legend.position = "top")
+```
+
+```{r model-table}
+coefs %>%
+  select(Facteur = term, `Odds Ratio` = estimate, `IC 2.5%` = conf.low, `IC 97.5%` = conf.high, `p-valeur` = p.value) %>%
+  mutate(across(where(is.numeric), ~round(., 3))) %>%
+  arrange(desc(`Odds Ratio`)) %>%
+  kable(caption = "Odds Ratios de la régression logistique") %>%
+  kable_styling(bootstrap_options = c("striped","hover","condensed"), full_width = FALSE) %>%
+  row_spec(which(coefs %>% arrange(desc(estimate)) %>% pull(Significatif)), background = "#FFEBEE")
+```
+
+---
+
+# Conclusions
+
+L'analyse du jeu de données BRFSS 2020 met en évidence plusieurs facteurs fortement associés au risque de maladie cardiaque :
+
+- **L'âge** est le prédicteur le plus puissant : le taux de maladie cardiaque passe de moins de 2% chez les 18-24 ans à plus de 25% chez les 80 ans et plus.
+- **Les antécédents médicaux** (AVC, maladie rénale, difficultés à marcher, diabète) sont fortement corrélés à la maladie cardiaque, traduisant probablement des co-morbidités ou une fragilité systémique.
+- **L'état de santé général perçu** est un indicateur synthétique très discriminant : les patients se déclarant en mauvaise santé ont un risque nettement supérieur.
+- **Le tabagisme** est associé à un risque augmenté, confirmant les données de la littérature.
+- **L'activité physique** apparaît comme facteur protecteur.
+- Le déséquilibre de classe (`r pct_malade`% de cas positifs) limite la portée prédictive d'un modèle simple et invite à des méthodes de rééquilibrage pour une modélisation approfondie.
+
+---
+
+# Annexe {-}
+
+```{r annexe, echo=TRUE, eval=FALSE}
+# Fonction utilitaire : calcul du taux de HeartDisease par variable catégorielle
+taux_maladie <- function(data, var) {
+  data %>%
+    group_by(.data[[var]], HeartDisease) %>%
+    summarise(n = n(), .groups = "drop") %>%
+    group_by(.data[[var]]) %>%
+    mutate(pct = n / sum(n)) %>%
+    filter(HeartDisease == "Yes") %>%
+    arrange(desc(pct))
+}
+```
