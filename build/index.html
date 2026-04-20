@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Heart Disease — Analyse Statistique</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #F5F7FA;
+      color: #1a1a2e;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background: linear-gradient(135deg, #1565C0 0%, #C62828 100%);
+      color: white;
+      padding: 3rem 2rem;
+      text-align: center;
+    }
+
+    header h1 {
+      font-size: 2.4rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      margin-bottom: 0.5rem;
+    }
+
+    header p {
+      font-size: 1.1rem;
+      opacity: 0.85;
+      max-width: 560px;
+      margin: 0 auto;
+    }
+
+    .badge {
+      display: inline-block;
+      background: rgba(255,255,255,0.2);
+      border-radius: 20px;
+      padding: 4px 14px;
+      font-size: 0.85rem;
+      margin-top: 1rem;
+    }
+
+    main {
+      flex: 1;
+      max-width: 900px;
+      margin: 3rem auto;
+      padding: 0 1.5rem;
+      width: 100%;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 2rem;
+      text-decoration: none;
+      color: inherit;
+      border: 2px solid transparent;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+      transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    }
+
+    .card-rapport  { border-top: 4px solid #1565C0; }
+    .card-rapport:hover  { border-color: #1565C0; }
+    .card-shiny    { border-top: 4px solid #C62828; }
+    .card-shiny:hover    { border-color: #C62828; }
+
+    .card-icon { font-size: 2.2rem; }
+
+    .card h2 {
+      font-size: 1.3rem;
+      font-weight: 600;
+    }
+
+    .card p {
+      font-size: 0.95rem;
+      color: #555;
+      line-height: 1.6;
+    }
+
+    .card-meta {
+      margin-top: auto;
+      font-size: 0.82rem;
+      color: #999;
+      border-top: 1px solid #f0f0f0;
+      padding-top: 0.75rem;
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 0.5rem 1.25rem;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-top: 0.5rem;
+    }
+
+    .btn-blue { background: #1565C0; color: white; }
+    .btn-red  { background: #C62828; color: white; }
+
+    .stats {
+      display: flex;
+      gap: 2rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 2.5rem;
+      text-align: center;
+    }
+
+    .stat-item strong {
+      display: block;
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: #1565C0;
+    }
+
+    .stat-item span {
+      font-size: 0.85rem;
+      color: #777;
+    }
+
+    footer {
+      text-align: center;
+      padding: 1.5rem;
+      font-size: 0.82rem;
+      color: #aaa;
+      border-top: 1px solid #e8e8e8;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Heart Disease Analysis</h1>
+    <p>Analyse statistique des facteurs de risque cardiovasculaires</p>
+    <span class="badge">BRFSS 2020 — CDC · DO3 Polytech</span>
+  </header>
+
+  <main>
+    <div class="stats">
+      <div class="stat-item">
+        <strong>319 795</strong>
+        <span>patients</span>
+      </div>
+      <div class="stat-item">
+        <strong>18</strong>
+        <span>variables</span>
+      </div>
+      <div class="stat-item">
+        <strong>9,1 %</strong>
+        <span>prévalence maladie cardiaque</span>
+      </div>
+    </div>
+
+    <div class="cards">
+      <a href="/rapport.html" class="card card-rapport">
+        <div class="card-icon">📊</div>
+        <h2>Rapport statistique</h2>
+        <p>
+          Analyse complète du jeu de données : statistiques descriptives,
+          visualisations bivariées, matrice de corrélation et régression logistique.
+        </p>
+        <span class="btn btn-blue">Consulter le rapport →</span>
+        <div class="card-meta">Généré depuis rapport.Rmd · R Markdown / HTML</div>
+      </a>
+
+      <a href="/app" class="card card-shiny">
+        <div class="card-icon">🔬</div>
+        <h2>Application interactive</h2>
+        <p>
+          Explorez les données en temps réel : exploration univariée,
+          analyse bivariée, facteurs de risque et simulateur de profil patient.
+        </p>
+        <span class="btn btn-red">Ouvrir l'application →</span>
+        <div class="card-meta">R Shiny · shinydashboard · plotly</div>
+      </a>
+    </div>
+  </main>
+
+  <footer>
+    MARTEL Dimitri · RICHARD Dorian · MICHAULT Louis · TORRES Léo &mdash; Polytech DO3 2026
+  </footer>
+
+</body>
+</html>

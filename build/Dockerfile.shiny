@@ -8,9 +8,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 RUN Rscript -e "install.packages(c('shinydashboard','dplyr','ggplot2','plotly','scales','forcats','tidyr'), repos='https://cran.rstudio.com/')"
 
+# Configuration shiny-server (chemin /app pour le reverse proxy nginx)
+COPY build/shiny-server.conf /etc/shiny-server/shiny-server.conf
+
 # Copie l'app et les données dans le répertoire Shiny
-COPY src/app.R  /srv/shiny-server/app.R
-COPY data/      /srv/shiny-server/data/
+COPY src/app.R /srv/shiny-server/app.R
+COPY data/     /srv/shiny-server/data/
 
 EXPOSE 3838
 CMD ["/usr/bin/shiny-server"]

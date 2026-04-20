@@ -1,27 +1,33 @@
-# Heart Disease — Projet Data Visualisation R
+# heart-disease-analysis
 
-Analyse statistique du jeu de données **BRFSS 2020** (CDC) — facteurs de risque des maladies cardiaques.
+> Analyse statistique des facteurs de risque cardiovasculaires — Rapport R Markdown & application Shiny interactive
+
+Jeu de données **BRFSS 2020** (CDC) · 319 795 patients · 18 variables
 
 ## Structure du projet
 
 ```
 projet/
 ├── data/
-│   └── heart.csv           # Jeu de données (319 795 patients, 19 variables)
+│   └── heart.csv                  # Jeu de données
 ├── src/
-│   ├── rapport.Rmd          # Rapport statistique complet
-│   └── app.R                # Application R Shiny interactive
+│   ├── rapport.Rmd                # Rapport statistique
+│   └── app.R                      # Application R Shiny
 ├── build/
-│   ├── Dockerfile.rmd       # Image Docker pour le rendu du rapport
-│   └── Dockerfile.shiny     # Image Docker pour l'application Shiny
-├── docker-compose.yml       # Orchestration des deux services
+│   ├── Dockerfile.frontend        # Multi-stage : rendu Rmd + nginx
+│   ├── Dockerfile.shiny           # Application Shiny
+│   ├── nginx.conf                 # Reverse proxy (/ → rapport, /app → Shiny)
+│   ├── shiny-server.conf          # Shiny-server au chemin /app
+│   └── index.html                 # Landing page
+├── .github/workflows/deploy.yml   # CI/CD → GitHub Pages
+├── docker-compose.yml
 └── README.md
 ```
 
-## Lancement via Docker (recommandé)
+## Lancement via Docker
 
 ### Prérequis
-- [Docker](https://docs.docker.com/get-docker/) et [Docker Compose](https://docs.docker.com/compose/) installés
+- [Docker](https://docs.docker.com/get-docker/) et Docker Compose installés
 
 ### Démarrage
 
@@ -33,10 +39,11 @@ Le premier build installe les packages R et rend le rapport (~10 min).
 
 ### Accès
 
-| Service | URL |
-|---------|-----|
-| Rapport HTML | http://localhost:8080/rapport.html |
-| Application Shiny | http://localhost:3838 |
+| URL | Service |
+|-----|---------|
+| `http://localhost` | Landing page |
+| `http://localhost/rapport.html` | Rapport statistique |
+| `http://localhost/app` | Application R Shiny |
 
 ### Arrêt
 
@@ -44,9 +51,19 @@ Le premier build installe les packages R et rend le rapport (~10 min).
 docker compose down
 ```
 
-## Lancement local (sans Docker)
+## CI/CD — GitHub Pages
 
-### Prérequis R
+Le rapport est automatiquement rendu et déployé sur **GitHub Pages** à chaque push sur `main`
+(si `src/rapport.Rmd` ou `data/` ont changé).
+
+### Activation (une seule fois)
+
+1. Aller dans **Settings → Pages** du dépôt GitHub
+2. Source : **GitHub Actions**
+
+Le rapport sera disponible à `https://<user>.github.io/heart-disease-analysis/`.
+
+## Lancement local (sans Docker)
 
 ```r
 install.packages(c(
@@ -54,18 +71,10 @@ install.packages(c(
   "kableExtra", "corrplot", "forcats", "broom", "gridExtra",
   "shiny", "shinydashboard", "plotly"
 ))
-```
 
-### Rendre le rapport
+# Rapport
+rmarkdown::render("src/rapport.Rmd", output_dir = ".", output_file = "rapport.html")
 
-```r
-rmarkdown::render("src/rapport.Rmd", output_file = "../rapport.html")
-```
-
-Ouvrir `rapport.html` dans un navigateur.
-
-### Lancer l'application Shiny
-
-```r
+# App Shiny
 shiny::runApp("src/app.R")
 ```

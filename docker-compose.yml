@@ -1,19 +1,24 @@
 services:
 
-  # Service 1 — Rapport HTML (rendu au build, servi sur :8080)
-  rapport:
-    build:
-      context: .
-      dockerfile: build/Dockerfile.rmd
-    ports:
-      - "8080:80"
-    restart: unless-stopped
-
-  # Service 2 — Application R Shiny (interactive, sur :3838)
+  # Application R Shiny (non exposée directement, proxifiée par frontend)
   shiny:
     build:
       context: .
       dockerfile: build/Dockerfile.shiny
+    expose:
+      - "3838"
+    restart: unless-stopped
+
+  # Frontend : nginx reverse proxy + rapport HTML statique
+  # Accès : http://localhost        → landing page
+  #          http://localhost/rapport.html → rapport
+  #          http://localhost/app    → application Shiny
+  frontend:
+    build:
+      context: .
+      dockerfile: build/Dockerfile.frontend
     ports:
-      - "3838:3838"
+      - "80:80"
+    depends_on:
+      - shiny
     restart: unless-stopped
