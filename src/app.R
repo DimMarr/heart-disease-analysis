@@ -5,7 +5,6 @@ library(ggplot2)
 library(plotly)
 library(scales)
 library(forcats)
-library(tidyr)
 
 # ── Données ──────────────────────────────────────────────────────────────────
 
@@ -60,11 +59,7 @@ vars_quanti <- c(
 
 theme_app <- function() {
   theme_minimal(base_size = 13) +
-    theme(
-      plot.title    = element_text(face = "bold", size = 14),
-      plot.subtitle = element_text(color = "grey50", size = 11),
-      legend.position = "bottom"
-    )
+    theme(legend.position = "bottom")
 }
 
 # ── UI ───────────────────────────────────────────────────────────────────────
@@ -236,7 +231,7 @@ server <- function(input, output, session) {
       count(HeartDisease) %>%
       mutate(pct = n / sum(n), label = paste0(format(n, big.mark=" "), "\n(", percent(pct,.1), ")")) %>%
       ggplot(aes(x = HeartDisease, y = n, fill = HeartDisease, text = label)) +
-      geom_col(width = 0.45) +
+      geom_col() +
       scale_fill_manual(values = PALETTE) +
       scale_y_continuous(labels = label_number(big.mark=" ")) +
       labs(title = "Distribution de la variable cible HeartDisease",
@@ -265,9 +260,8 @@ server <- function(input, output, session) {
     } else {
       var <- input$expl_quanti_var
       lbl <- names(vars_quanti)[vars_quanti == var]
-      vals <- df_raw[[var]]
       p <- ggplot(df_raw, aes(x = .data[[var]])) +
-        geom_histogram(bins = input$expl_bins, fill = BLUE, color = "white", alpha = .85) +
+        geom_histogram(bins = input$expl_bins, fill = BLUE) +
         scale_y_continuous(labels = label_number(big.mark=" ")) +
         labs(title = paste("Distribution —", lbl), x = NULL, y = "Effectif") +
         theme_app()
@@ -289,7 +283,7 @@ server <- function(input, output, session) {
         mutate(pct = n / sum(n)) %>%
         ggplot(aes(x = .data[[var]], y = pct, fill = HeartDisease,
                    text = paste0(HeartDisease, ": ", percent(pct,.1)))) +
-        geom_col(position = "fill") +
+        geom_col() +
         scale_fill_manual(values = PALETTE) +
         scale_y_continuous(labels = percent_format()) +
         labs(title = paste(lbl, "vs HeartDisease"), x = lbl, y = "Proportion") +
@@ -301,7 +295,7 @@ server <- function(input, output, session) {
       lbl <- names(vars_quanti)[vars_quanti == var]
       p <- df_f %>%
         ggplot(aes(x = HeartDisease, y = .data[[var]], fill = HeartDisease)) +
-        geom_boxplot(alpha = .75, outlier.size = .4, outlier.alpha = .2) +
+        geom_boxplot() +
         scale_fill_manual(values = PALETTE) +
         labs(title = paste(lbl, "selon HeartDisease"), x = "Maladie cardiaque", y = lbl) +
         theme_app() + theme(legend.position = "none")
@@ -322,7 +316,7 @@ server <- function(input, output, session) {
       arrange(desc(pct)) %>%
       ggplot(aes(x = fct_reorder(.data[[var]], pct), y = pct,
                  text = paste0(.data[[var]], " : ", percent(pct, .1)))) +
-      geom_col(fill = "#E53935", alpha = .85) +
+      geom_col(fill = "#E53935") +
       scale_y_continuous(labels = percent_format(), expand = expansion(mult = c(0,.15))) +
       coord_flip() +
       labs(title = paste("Taux de HeartDisease selon", lbl),
@@ -352,7 +346,7 @@ server <- function(input, output, session) {
       mutate(Variable = fct_reorder(Variable, taux)) %>%
       ggplot(aes(x = Variable, y = taux,
                  text = paste0(Variable, " : ", percent(taux, .1)))) +
-      geom_col(fill = "#E53935", alpha = .8) +
+      geom_col(fill = "#E53935") +
       geom_hline(yintercept = mean(df_raw$HeartDisease == "Yes"),
                  linetype = "dashed", color = "grey40") +
       scale_y_continuous(labels = percent_format(), expand = expansion(mult = c(0,.1))) +
@@ -399,8 +393,7 @@ server <- function(input, output, session) {
     p <- df_bar %>%
       ggplot(aes(x = Groupe, y = Taux, fill = Groupe,
                  text = paste0(Groupe, "\nTaux : ", percent(Taux, .1), "\n(n=", format(N, big.mark=" "), ")"))) +
-      geom_col(width = 0.4, show.legend = FALSE) +
-      geom_text(aes(label = percent(Taux, .1)), vjust = -0.4, size = 5, fontface = "bold") +
+      geom_col(show.legend = FALSE) +
       scale_fill_manual(values = c("Taux global" = "#90CAF9", "Votre profil" = "#E53935")) +
       scale_y_continuous(labels = percent_format(), expand = expansion(mult = c(0,.2))) +
       labs(
