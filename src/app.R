@@ -140,7 +140,28 @@ ui <- dashboardPage(
               tags$li("Problématique globale : ", em("Quels facteurs sont associés au risque de maladie cardiaque ?"))
             ),
             hr(),
-            plotlyOutput("accueil_target_plot", height = "280px")
+            plotlyOutput("accueil_target_plot", height = "280px"),
+            p(
+              em("Ce graphique donne la prévalence globale de la maladie cardiaque et sert de référence pour interpréter les autres analyses.")
+            )
+          )
+        ),
+        fluidRow(
+          box(
+            width = 6, title = "Prévalence selon l'âge et le sexe", status = "primary",
+            solidHeader = TRUE,
+            plotlyOutput("accueil_age_sex_plot", height = "320px"),
+            p(
+              em("Ce graphique montre comment la prévalence varie selon la tranche d'âge et le sexe. Il sert à repérer les sous-populations les plus exposées.")
+            )
+          ),
+          box(
+            width = 6, title = "Comparaison des variables quantitatives", status = "primary",
+            solidHeader = TRUE,
+            plotlyOutput("accueil_quant_profile_plot", height = "320px"),
+            p(
+              em("Ces distributions comparent le profil numérique des patients malades et non malades (IMC, sommeil, santé physique et mentale).")
+            )
           )
         )
       ),
@@ -166,7 +187,14 @@ ui <- dashboardPage(
           ),
           box(
             width = 9, title = "Graphique", status = "primary", solidHeader = TRUE,
-            plotlyOutput("expl_plot", height = "420px")
+            plotlyOutput("expl_plot", height = "360px"),
+            uiOutput("expl_desc"),
+            hr(),
+            box(
+              width = 12, title = "Statistiques descriptives", status = "primary",
+              solidHeader = TRUE,
+              uiOutput("expl_stats")
+            )
           )
         )
       ),
@@ -196,7 +224,14 @@ ui <- dashboardPage(
           ),
           box(
             width = 9, title = "Graphique", status = "warning", solidHeader = TRUE,
-            plotlyOutput("biv_plot", height = "420px")
+            plotlyOutput("biv_plot", height = "320px"),
+            uiOutput("biv_desc"),
+            hr(),
+            box(
+              width = 12, title = "Indicateurs statistiques", status = "warning",
+              solidHeader = TRUE,
+              uiOutput("biv_stats")
+            )
           )
         )
       ),
@@ -214,13 +249,25 @@ ui <- dashboardPage(
           box(
             width = 9, title = "Taux de maladie cardiaque par facteur", status = "danger",
             solidHeader = TRUE,
-            plotlyOutput("risque_plot", height = "420px")
+            plotlyOutput("risque_plot", height = "350px"),
+            p(
+              em("Ce graphique classe les modalités du facteur sélectionné selon leur taux de maladie cardiaque.")
+            ),
+            hr(),
+            tableOutput("risque_top_table"),
+            p(
+              em("Le tableau résume les modalités les plus à risque pour le facteur sélectionné.")
+            )
           )
         ),
         fluidRow(
-          box(width = 12, title = "Vue d'ensemble — tous les facteurs binaires",
-            status = "danger", solidHeader = TRUE, collapsible = TRUE, collapsed = TRUE,
-            plotlyOutput("risque_overview", height = "380px")
+          box(
+            width = 12, title = "Vue d'ensemble — tous les facteurs binaires", status = "danger",
+            solidHeader = TRUE, collapsible = TRUE, collapsed = TRUE,
+            plotlyOutput("risque_overview", height = "380px"),
+            p(
+              em("Cette vue compare rapidement les taux observés pour tous les facteurs binaires et sert à hiérarchiser les facteurs potentiels.")
+            )
           )
         ),
         fluidRow(
@@ -305,6 +352,9 @@ ui <- dashboardPage(
             width = 8, title = "Profil par rapport à la population", status = "info",
             solidHeader = TRUE,
             plotlyOutput("profil_radar", height = "380px"),
+            p(
+              em("Le graphique compare le taux de maladie cardiaque de votre profil au taux global de la population.")
+            ),
             hr(),
             uiOutput("profil_resume")
           )
@@ -356,7 +406,55 @@ server <- function(input, output, session) {
     ggplotly(p, tooltip = "text")
   })
 
-  # ── Exploration ──────────────────────────────────────────────────────────
+  output$accueil_age_sex_plot <- renderPlotly({
+    p <- df_raw %>%
+      group_by(AgeCategory, Sex) %>%
+      summarise(taux = mean(HeartDisease == "Yes"), n = n(), .groups = "drop") %>%
+      ggplot(aes(
+        x = AgeCategory, y = taux, color = Sex, group = Sex,
+        text = paste0(
+          "Âge: ", AgeCategory,
+          "<br>Sexe: ", Sex,
+          "<br>Taux: ", percent(taux, .1),
+          "<br>n=", format(n, big.mark = " ")
+        )
+      )) +
+      geom_line(linewidth = 1) +
+      geom_point(size = 2.2) +
+      scale_y_continuous(labels = percent_format()) +
+      labs(title = "Prévalence de HeartDisease selon l'âge et le sexe", x = NULL, y = "Prévalence") +
+      theme_app() +
+      theme(axis.text.x = element_text(angle = 35, hjust = 1))
+    ggplotly(p, tooltip = "text")
+  })
+
+  output$accueil_quant_profile_plot <- renderPlotly({
+    var_names <- c("BMI", "PhysicalHealth", "MentalHealth", "SleepTime")
+    labels_map <- c(
+      BMI = "IMC (BMI)",
+      PhysicalHealth = "Jours santé physique altérée",
+      MentalHealth = "Jours santé mentale altérée",
+      SleepTime = "Heures de sommeil"
+    )
+    df_long <- bind_rows(lapply(var_names, function(v) {
+      tibble(
+        HeartDisease = df_raw$HeartDisease,
+        Variable = labels_map[[v]],
+        Valeur = df_raw[[v]]
+      )
+    }))
+
+    p <- ggplot(df_long, aes(x = HeartDisease, y = Valeur, fill = HeartDisease)) +
+      geom_boxplot(outlier.alpha = 0.12) +
+      facet_wrap(~Variable, scales = "free_y") +
+      scale_fill_manual(values = PALETTE) +
+      labs(title = "Comparaison des variables quantitatives selon HeartDisease", x = NULL, y = NULL) +
+      theme_app() +
+      theme(legend.position = "none")
+    ggplotly(p)
+  })
+
+  # ── Exploration ─────────────────────────────────────────────────────────
   output$expl_plot <- renderPlotly({
     if (input$expl_type == "Qualitative") {
       var <- input$expl_quali_var
@@ -386,6 +484,61 @@ server <- function(input, output, session) {
       ggplotly(p)
     }
   })
+
+  output$expl_desc <- renderUI({
+    if (input$expl_type == "Qualitative") {
+      tags$p(em("La distribution permet d'identifier les modalités les plus fréquentes et d'évaluer le déséquilibre éventuel de la variable."))
+    } else {
+      tags$p(em("L'histogramme permet de voir la forme de distribution (asymétrie, dispersion, concentrations) et de guider les analyses suivantes."))
+    }
+  })
+
+  output$expl_stats <- renderUI({
+    if (input$expl_type == "Qualitative") {
+      var <- input$expl_quali_var
+      lbl <- names(vars_quali)[vars_quali == var]
+      stats <- df_raw %>%
+        count(.data[[var]], name = "Effectif") %>%
+        mutate(Proportion = percent(Effectif / sum(Effectif), 0.1)) %>%
+        arrange(desc(Effectif))
+      top_mod <- as.character(stats[[var]][1])
+      top_pct <- stats$Proportion[1]
+
+      tagList(
+        p(strong("Variable : "), lbl),
+        p(strong("Modalité la plus fréquente : "), top_mod, " (", top_pct, ")"),
+        tableOutput("expl_stats_table")
+      )
+    } else {
+      var <- input$expl_quanti_var
+      lbl <- names(vars_quanti)[vars_quanti == var]
+      x <- df_raw[[var]]
+      q <- quantile(x, probs = c(0.25, 0.5, 0.75), na.rm = TRUE)
+      iqr_val <- IQR(x, na.rm = TRUE)
+      std_val <- sd(x, na.rm = TRUE)
+
+      tagList(
+        p(strong("Variable : "), lbl),
+        tags$ul(
+          tags$li(paste0("Moyenne : ", round(mean(x, na.rm = TRUE), 2))),
+          tags$li(paste0("Médiane : ", round(q[2], 2))),
+          tags$li(paste0("Écart-type : ", round(std_val, 2))),
+          tags$li(paste0("Q1–Q3 : ", round(q[1], 2), " – ", round(q[3], 2))),
+          tags$li(paste0("IQR : ", round(iqr_val, 2)))
+        )
+      )
+    }
+  })
+
+  output$expl_stats_table <- renderTable({
+    req(input$expl_type == "Qualitative")
+    var <- input$expl_quali_var
+    df_raw %>%
+      count(.data[[var]], name = "Effectif") %>%
+      mutate(Proportion = percent(Effectif / sum(Effectif), 0.1)) %>%
+      arrange(desc(Effectif)) %>%
+      rename(Modalite = !!var)
+  }, striped = TRUE, bordered = TRUE, width = "100%")
 
   # ── Analyse bivariée ─────────────────────────────────────────────────────
   output$biv_plot <- renderPlotly({
@@ -431,6 +584,53 @@ server <- function(input, output, session) {
     }
   })
 
+  output$biv_desc <- renderUI({
+    if (input$biv_type == "Qualitative") {
+      tags$p(em("Les barres empilées montrent la composition en No/Yes dans chaque modalité et servent à comparer les profils de risque relatifs."))
+    } else {
+      tags$p(em("Les boxplots comparent la distribution de la variable quantitative entre patients malades et non malades."))
+    }
+  })
+
+  output$biv_stats <- renderUI({
+    req(length(input$biv_hd_filter) > 0)
+    df_f <- df_raw %>% filter(HeartDisease %in% input$biv_hd_filter)
+
+    if (input$biv_type == "Qualitative") {
+      var <- input$biv_quali_var
+      tbl <- table(df_f[[var]], df_f$HeartDisease)
+      test <- suppressWarnings(chisq.test(tbl))
+      pval <- format.pval(test$p.value, digits = 3, eps = 1e-4)
+      cramers_v <- sqrt(as.numeric(test$statistic) / (sum(tbl) * (min(dim(tbl)) - 1)))
+
+      tagList(
+        tags$ul(
+          tags$li(paste0("Test du chi-deux : p-value = ", pval)),
+          tags$li(paste0("Intensité d'association (V de Cramer) = ", round(cramers_v, 3)))
+        ),
+        p(em("Une p-value faible suggère une association entre la variable choisie et la présence de maladie cardiaque."))
+      )
+    } else {
+      var <- input$biv_quanti_var
+      y_no <- df_f %>% filter(HeartDisease == "No") %>% pull(.data[[var]])
+      y_yes <- df_f %>% filter(HeartDisease == "Yes") %>% pull(.data[[var]])
+      test <- suppressWarnings(wilcox.test(y_yes, y_no))
+      pval <- format.pval(test$p.value, digits = 3, eps = 1e-4)
+      med_no <- median(y_no, na.rm = TRUE)
+      med_yes <- median(y_yes, na.rm = TRUE)
+
+      tagList(
+        tags$ul(
+          tags$li(paste0("Test de Wilcoxon : p-value = ", pval)),
+          tags$li(paste0("Médiane No = ", round(med_no, 2))),
+          tags$li(paste0("Médiane Yes = ", round(med_yes, 2))),
+          tags$li(paste0("Écart de médiane (Yes - No) = ", round(med_yes - med_no, 2)))
+        ),
+        p(em("Ces indicateurs quantifient l'écart observé entre les deux groupes."))
+      )
+    }
+  })
+
   # ── Facteurs de risque ────────────────────────────────────────────────────
   output$risque_plot <- renderPlotly({
     var <- input$risque_var
@@ -453,6 +653,25 @@ server <- function(input, output, session) {
       theme_app()
     ggplotly(p, tooltip = "text")
   })
+
+  output$risque_top_table <- renderTable({
+    var <- input$risque_var
+    df_raw %>%
+      group_by(.data[[var]], HeartDisease) %>%
+      summarise(n = n(), .groups = "drop") %>%
+      group_by(.data[[var]]) %>%
+      mutate(taux = n / sum(n)) %>%
+      filter(HeartDisease == "Yes") %>%
+      ungroup() %>%
+      arrange(desc(taux)) %>%
+      mutate(
+        Modalite = as.character(.data[[var]]),
+        Taux = percent(taux, 0.1)
+      ) %>%
+      select(Modalite, Taux, n) %>%
+      head(5) %>%
+      rename(`Effectif modalite` = n)
+  }, striped = TRUE, bordered = TRUE, width = "100%")
 
   output$risque_overview <- renderPlotly({
     overview_vars <- c("Smoking","AlcoholDrinking","Stroke","DiffWalking",
