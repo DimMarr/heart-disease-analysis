@@ -19,7 +19,7 @@ output:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
-  echo    = FALSE,
+  echo = FALSE,
   warning = FALSE,
   message = FALSE,
   fig.align = "center",
@@ -41,7 +41,7 @@ library(forcats)
 theme_set(
   theme_minimal(base_size = 13) +
     theme(
-      plot.title    = element_text(face = "bold", size = 14),
+      plot.title = element_text(face = "bold", size = 14),
       plot.subtitle = element_text(color = "grey50", size = 11),
       legend.position = "bottom"
     )
@@ -52,29 +52,29 @@ PALETTE_MALADIE <- c("No" = "#4CAF50", "Yes" = "#E53935")
 
 ```{r load-data}
 df <- read.csv("../data/heart.csv", stringsAsFactors = FALSE) %>%
-  select(-1) %>%   # supprime l'index
+  select(-1) %>% # supprime l'index
   mutate(
-    HeartDisease     = factor(HeartDisease,     levels = c("No", "Yes")),
-    Smoking          = factor(Smoking,          levels = c("No", "Yes")),
-    AlcoholDrinking  = factor(AlcoholDrinking,  levels = c("No", "Yes")),
-    Stroke           = factor(Stroke,           levels = c("No", "Yes")),
-    DiffWalking      = factor(DiffWalking,      levels = c("No", "Yes")),
-    Sex              = factor(Sex),
-    Diabetic         = factor(Diabetic),
+    HeartDisease = factor(HeartDisease, levels = c("No", "Yes")),
+    Smoking = factor(Smoking, levels = c("No", "Yes")),
+    AlcoholDrinking = factor(AlcoholDrinking, levels = c("No", "Yes")),
+    Stroke = factor(Stroke, levels = c("No", "Yes")),
+    DiffWalking = factor(DiffWalking, levels = c("No", "Yes")),
+    Sex = factor(Sex),
+    Diabetic = factor(Diabetic),
     PhysicalActivity = factor(PhysicalActivity, levels = c("No", "Yes")),
-    GenHealth        = factor(GenHealth, levels = c("Poor", "Fair", "Good", "Very good", "Excellent")),
-    Asthma           = factor(Asthma,           levels = c("No", "Yes")),
-    KidneyDisease    = factor(KidneyDisease,    levels = c("No", "Yes")),
-    SkinCancer       = factor(SkinCancer,       levels = c("No", "Yes")),
-    AgeCategory      = factor(AgeCategory, levels = c(
-      "18-24","25-29","30-34","35-39","40-44","45-49",
-      "50-54","55-59","60-64","65-69","70-74","75-79","80 or older"
+    GenHealth = factor(GenHealth, levels = c("Poor", "Fair", "Good", "Very good", "Excellent")),
+    Asthma = factor(Asthma, levels = c("No", "Yes")),
+    KidneyDisease = factor(KidneyDisease, levels = c("No", "Yes")),
+    SkinCancer = factor(SkinCancer, levels = c("No", "Yes")),
+    AgeCategory = factor(AgeCategory, levels = c(
+      "18-24", "25-29", "30-34", "35-39", "40-44", "45-49",
+      "50-54", "55-59", "60-64", "65-69", "70-74", "75-79", "80 or older"
     )),
     Race = factor(Race)
   )
 
-n_total   <- nrow(df)
-n_malade  <- sum(df$HeartDisease == "Yes")
+n_total <- nrow(df)
+n_malade <- sum(df$HeartDisease == "Yes")
 pct_malade <- round(100 * n_malade / n_total, 1)
 ```
 
@@ -95,11 +95,13 @@ antécédents médicaux et données démographiques.
 
 ```{r table-variables}
 vars_desc <- tibble::tibble(
-  Variable         = names(df),
-  Type             = c("Binaire","Continue","Binaire","Binaire","Binaire","Continue",
-                       "Continue","Binaire","Catégorielle","Catégorielle","Catégorielle",
-                       "Catégorielle","Binaire","Continue","Ordinale","Binaire","Binaire","Binaire"),
-  Description      = c(
+  Variable = names(df),
+  Type = c(
+    "Binaire", "Continue", "Binaire", "Binaire", "Binaire", "Continue",
+    "Continue", "Binaire", "Catégorielle", "Catégorielle", "Catégorielle",
+    "Catégorielle", "Binaire", "Continue", "Ordinale", "Binaire", "Binaire", "Binaire"
+  ),
+  Description = c(
     "Maladie cardiaque déclarée (variable cible)",
     "Indice de masse corporelle",
     "Fumeur (≥100 cigarettes à vie)",
@@ -138,11 +140,11 @@ df_quanti <- df %>% select(BMI, PhysicalHealth, MentalHealth, SleepTime)
 
 stats_quanti <- df_quanti %>%
   summarise(across(everything(), list(
-    Min    = ~round(min(.),    2),
-    Médiane = ~round(median(.), 2),
-    Moyenne = ~round(mean(.),   2),
-    `Écart-type` = ~round(sd(.), 2),
-    Max    = ~round(max(.),    2)
+    Min = ~ round(min(.), 2),
+    Médiane = ~ round(median(.), 2),
+    Moyenne = ~ round(mean(.), 2),
+    `Écart-type` = ~ round(sd(.), 2),
+    Max = ~ round(max(.), 2)
   ))) %>%
   pivot_longer(everything(), names_to = c("Variable", ".value"), names_sep = "_")
 
@@ -166,12 +168,13 @@ df %>%
   mutate(pct = n / sum(n)) %>%
   ggplot(aes(x = HeartDisease, y = n, fill = HeartDisease)) +
   geom_col(width = 0.5, show.legend = FALSE) +
-  geom_text(aes(label = paste0(format(n, big.mark=" "), "\n(", percent(pct, accuracy=0.1), ")")),
-            vjust = -0.4, size = 4, fontface = "bold") +
+  geom_text(aes(label = paste0(format(n, big.mark = " "), "\n(", percent(pct, accuracy = 0.1), ")")),
+    vjust = -0.4, size = 4, fontface = "bold"
+  ) +
   scale_fill_manual(values = PALETTE_MALADIE) +
   scale_y_continuous(labels = label_number(big.mark = " "), expand = expansion(mult = c(0, 0.15))) +
   labs(
-    title    = "Distribution de la variable cible : HeartDisease",
+    title = "Distribution de la variable cible : HeartDisease",
     subtitle = paste0(pct_malade, "% des patients déclarent une maladie cardiaque"),
     x = "Maladie cardiaque", y = "Nombre de patients"
   )
@@ -201,7 +204,7 @@ df_long_quanti %>%
   facet_wrap(~Variable, scales = "free", labeller = labeller(Variable = labels_quanti)) +
   scale_y_continuous(labels = label_number(big.mark = " ")) +
   labs(
-    title    = "Distribution des variables quantitatives",
+    title = "Distribution des variables quantitatives",
     subtitle = "Histogrammes — effectifs bruts",
     x = NULL, y = "Effectif"
   )
@@ -210,8 +213,10 @@ df_long_quanti %>%
 ## Variables qualitatives
 
 ```{r barplot-quali, fig.height=9}
-quali_vars <- c("Smoking","AlcoholDrinking","Stroke","DiffWalking","Sex",
-                "Diabetic","PhysicalActivity","Asthma","KidneyDisease","SkinCancer")
+quali_vars <- c(
+  "Smoking", "AlcoholDrinking", "Stroke", "DiffWalking", "Sex",
+  "Diabetic", "PhysicalActivity", "Asthma", "KidneyDisease", "SkinCancer"
+)
 
 df %>%
   select(all_of(quali_vars)) %>%
@@ -227,7 +232,7 @@ df %>%
   scale_fill_brewer(palette = "Set2") +
   facet_wrap(~Variable, scales = "free_x", ncol = 4) +
   labs(
-    title    = "Distribution des variables qualitatives binaires",
+    title = "Distribution des variables qualitatives binaires",
     subtitle = "Proportions par modalité",
     x = NULL, y = "Proportion"
   ) +
@@ -279,7 +284,7 @@ df %>%
   scale_fill_manual(values = PALETTE_MALADIE, name = "Maladie cardiaque") +
   facet_wrap(~Variable, scales = "free_y", labeller = labeller(Variable = labels_quanti)) +
   labs(
-    title    = "Variables quantitatives selon la présence de maladie cardiaque",
+    title = "Variables quantitatives selon la présence de maladie cardiaque",
     subtitle = "Comparaison des distributions par boxplots",
     x = "Maladie cardiaque", y = NULL
   )
@@ -298,22 +303,25 @@ plot_taux <- function(var, label) {
     ggplot(aes(x = .data[[var]], y = pct)) +
     geom_col(fill = "#E53935", alpha = 0.8) +
     geom_text(aes(label = percent(pct, accuracy = 0.1)), vjust = -0.3, size = 3.2) +
-    scale_y_continuous(labels = percent_format(), expand = expansion(mult = c(0, 0.15)),
-                       limits = c(0, NA)) +
+    scale_y_continuous(
+      labels = percent_format(), expand = expansion(mult = c(0, 0.15)),
+      limits = c(0, NA)
+    ) +
     labs(title = label, x = NULL, y = "Taux HeartDisease") +
     theme(axis.text.x = element_text(angle = 30, hjust = 1, size = 9))
 }
 
-p1 <- plot_taux("Smoking",       "Tabagisme")
-p2 <- plot_taux("AlcoholDrinking","Alcool")
-p3 <- plot_taux("Stroke",         "Antécédent AVC")
-p4 <- plot_taux("DiffWalking",    "Difficultés à marcher")
-p5 <- plot_taux("Diabetic",       "Diabète")
-p6 <- plot_taux("PhysicalActivity","Activité physique")
-p7 <- plot_taux("GenHealth",      "Santé générale perçue")
-p8 <- plot_taux("KidneyDisease",  "Maladie rénale")
+p1 <- plot_taux("Smoking", "Tabagisme")
+p2 <- plot_taux("AlcoholDrinking", "Alcool")
+p3 <- plot_taux("Stroke", "Antécédent AVC")
+p4 <- plot_taux("DiffWalking", "Difficultés à marcher")
+p5 <- plot_taux("Diabetic", "Diabète")
+p6 <- plot_taux("PhysicalActivity", "Activité physique")
+p7 <- plot_taux("GenHealth", "Santé générale perçue")
+p8 <- plot_taux("KidneyDisease", "Maladie rénale")
 
-gridExtra::grid.arrange(p1, p2, p3, p4, p5, p6, p7, p8, ncol = 4,
+gridExtra::grid.arrange(p1, p2, p3, p4, p5, p6, p7, p8,
+  ncol = 4,
   top = grid::textGrob(
     "Taux de maladie cardiaque selon chaque facteur de risque",
     gp = grid::gpar(fontface = "bold", fontsize = 13)
@@ -335,7 +343,7 @@ df %>%
   geom_text(aes(label = percent(pct, accuracy = 1)), size = 3.2, color = "white", fontface = "bold") +
   scale_fill_gradient(low = "#FFCDD2", high = "#B71C1C", labels = percent_format(), name = "Taux") +
   labs(
-    title    = "Taux de maladie cardiaque par tranche d'âge et sexe",
+    title = "Taux de maladie cardiaque par tranche d'âge et sexe",
     subtitle = "Le risque augmente fortement après 55 ans",
     x = "Tranche d'âge", y = NULL
   ) +
@@ -367,30 +375,34 @@ df %>%
 df_cor <- df %>%
   mutate(
     HeartDisease_bin = as.integer(HeartDisease == "Yes"),
-    Smoking_bin      = as.integer(Smoking == "Yes"),
-    Stroke_bin       = as.integer(Stroke == "Yes"),
-    Diabetic_bin     = as.integer(Diabetic %in% c("Yes", "Yes (during pregnancy)")),
-    DiffWalking_bin  = as.integer(DiffWalking == "Yes"),
-    KidneyDisease_bin= as.integer(KidneyDisease == "Yes"),
-    Age_num          = as.integer(AgeCategory)
+    Smoking_bin = as.integer(Smoking == "Yes"),
+    Stroke_bin = as.integer(Stroke == "Yes"),
+    Diabetic_bin = as.integer(Diabetic %in% c("Yes", "Yes (during pregnancy)")),
+    DiffWalking_bin = as.integer(DiffWalking == "Yes"),
+    KidneyDisease_bin = as.integer(KidneyDisease == "Yes"),
+    Age_num = as.integer(AgeCategory)
   ) %>%
-  select(HeartDisease_bin, BMI, PhysicalHealth, MentalHealth, SleepTime,
-         Age_num, Smoking_bin, Stroke_bin, Diabetic_bin, DiffWalking_bin, KidneyDisease_bin)
+  select(
+    HeartDisease_bin, BMI, PhysicalHealth, MentalHealth, SleepTime,
+    Age_num, Smoking_bin, Stroke_bin, Diabetic_bin, DiffWalking_bin, KidneyDisease_bin
+  )
 
-colnames(df_cor) <- c("Maladie\ncardiaque","IMC","Santé\nphysique","Santé\nmentale",
-                      "Sommeil","Âge","Tabac","AVC","Diabète","Diff.\nmarche","Rein")
+colnames(df_cor) <- c(
+  "Maladie\ncardiaque", "IMC", "Santé\nphysique", "Santé\nmentale",
+  "Sommeil", "Âge", "Tabac", "AVC", "Diabète", "Diff.\nmarche", "Rein"
+)
 
 M <- cor(df_cor)
 corrplot(M,
-  method   = "color",
-  type     = "upper",
-  tl.cex   = 0.8,
-  tl.col   = "black",
+  method = "color",
+  type = "upper",
+  tl.cex = 0.8,
+  tl.col = "black",
   addCoef.col = "black",
-  number.cex  = 0.65,
-  col      = colorRampPalette(c("#1565C0","white","#C62828"))(200),
-  title    = "Matrice de corrélation des variables (encodées numériquement)",
-  mar      = c(0,0,2,0)
+  number.cex = 0.65,
+  col = colorRampPalette(c("#1565C0", "white", "#C62828"))(200),
+  title = "Matrice de corrélation des variables (encodées numériquement)",
+  mar = c(0, 0, 2, 0)
 )
 ```
 
@@ -413,7 +425,7 @@ modele <- glm(
   HeartDisease_bin ~ Age_num + BMI + Smoking + Stroke + DiffWalking +
     PhysicalHealth + MentalHealth + SleepTime + Sex + GenHealth +
     Diabetic_bin + KidneyDisease + PhysicalActivity,
-  data   = df_sample,
+  data = df_sample,
   family = binomial(link = "logit")
 )
 ```
@@ -423,21 +435,21 @@ coefs <- broom::tidy(modele, exponentiate = TRUE, conf.int = TRUE) %>%
   filter(term != "(Intercept)") %>%
   mutate(
     term = recode(term,
-      Age_num             = "Âge (par tranche)",
-      BMI                 = "IMC",
-      SmokingYes          = "Tabagisme",
-      StrokeYes           = "Antécédent AVC",
-      DiffWalkingYes      = "Difficultés à marcher",
-      PhysicalHealth      = "Jours mauvaise santé physique",
-      MentalHealth        = "Jours mauvaise santé mentale",
-      SleepTime           = "Heures de sommeil",
-      SexMale             = "Sexe masculin",
-      `GenHealthFair`     = "Santé : Passable",
-      `GenHealthGood`     = "Santé : Bonne",
-      `GenHealthPoor`     = "Santé : Mauvaise",
-      `GenHealthVery good`= "Santé : Très bonne",
-      Diabetic_bin        = "Diabète",
-      KidneyDiseaseYes    = "Maladie rénale",
+      Age_num = "Âge (par tranche)",
+      BMI = "IMC",
+      SmokingYes = "Tabagisme",
+      StrokeYes = "Antécédent AVC",
+      DiffWalkingYes = "Difficultés à marcher",
+      PhysicalHealth = "Jours mauvaise santé physique",
+      MentalHealth = "Jours mauvaise santé mentale",
+      SleepTime = "Heures de sommeil",
+      SexMale = "Sexe masculin",
+      `GenHealthFair` = "Santé : Passable",
+      `GenHealthGood` = "Santé : Bonne",
+      `GenHealthPoor` = "Santé : Mauvaise",
+      `GenHealthVery good` = "Santé : Très bonne",
+      Diabetic_bin = "Diabète",
+      KidneyDiseaseYes = "Maladie rénale",
       PhysicalActivityYes = "Activité physique"
     ),
     Significatif = p.value < 0.05,
@@ -448,11 +460,13 @@ ggplot(coefs, aes(x = estimate, y = term, color = Significatif)) +
   geom_vline(xintercept = 1, linetype = "dashed", color = "grey50") +
   geom_errorbarh(aes(xmin = conf.low, xmax = conf.high), height = 0.3, alpha = 0.6) +
   geom_point(size = 3) +
-  scale_color_manual(values = c("FALSE" = "grey60", "TRUE" = "#C62828"),
-                     labels = c("Non significatif (p≥0.05)", "Significatif (p<0.05)")) +
+  scale_color_manual(
+    values = c("FALSE" = "grey60", "TRUE" = "#C62828"),
+    labels = c("Non significatif (p≥0.05)", "Significatif (p<0.05)")
+  ) +
   scale_x_log10() +
   labs(
-    title    = "Odds Ratios — Régression logistique",
+    title = "Odds Ratios — Régression logistique",
     subtitle = "Facteurs associés à la maladie cardiaque (n = 50 000, IC 95%)",
     x = "Odds Ratio (échelle log)", y = NULL,
     color = NULL
@@ -463,10 +477,10 @@ ggplot(coefs, aes(x = estimate, y = term, color = Significatif)) +
 ```{r model-table}
 coefs %>%
   select(Facteur = term, `Odds Ratio` = estimate, `IC 2.5%` = conf.low, `IC 97.5%` = conf.high, `p-valeur` = p.value) %>%
-  mutate(across(where(is.numeric), ~round(., 3))) %>%
+  mutate(across(where(is.numeric), ~ round(., 3))) %>%
   arrange(desc(`Odds Ratio`)) %>%
   kable(caption = "Odds Ratios de la régression logistique") %>%
-  kable_styling(bootstrap_options = c("striped","hover","condensed"), full_width = FALSE) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = FALSE) %>%
   row_spec(which(coefs %>% arrange(desc(estimate)) %>% pull(Significatif)), background = "#FFEBEE")
 ```
 
