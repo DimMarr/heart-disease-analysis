@@ -416,8 +416,13 @@ server <- function(input, output, session) {
     ratio       <- round(taux_profil / taux_global, 1)
     age_lbl     <- levels(df_raw$AgeCategory)[input$p_age]
 
-    couleur <- if (taux_profil > taux_global * 1.5) "#C62828" else
-               if (taux_profil < taux_global * 0.7) "#2E7D32" else "#F57F17"
+    couleur <- if (taux_profil > taux_global * 1.5) {
+      "#C62828"
+    } else if (taux_profil < taux_global * 0.7) {
+      "#2E7D32"
+    } else {
+      "#F57F17"
+    }
 
     tagList(
       tags$div(style = paste0("border-left: 4px solid ", couleur, "; padding-left: 12px;"),
