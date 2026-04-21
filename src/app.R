@@ -72,7 +72,7 @@ theme_app <- function() {
 ui <- dashboardPage(
   skin = "blue",
 
-  dashboardHeader(title = "Heart Disease — Analyse"),
+  dashboardHeader(title = "Heart Disease"),
 
   dashboardSidebar(
     sidebarMenu(
@@ -112,7 +112,7 @@ ui <- dashboardPage(
             tags$ul(
               tags$li(strong("319 795 patients"), " — enquête nationale représentative"),
               tags$li("18 variables : habitudes de vie, antécédents médicaux, données démographiques"),
-              tags$li("Problématique : ", em("Quels facteurs sont associés au risque de maladie cardiaque ?"))
+              tags$li("Problématique globale : ", em("Quels facteurs sont associés au risque de maladie cardiaque ?"))
             ),
             hr(),
             plotlyOutput("accueil_target_plot", height = "280px")
@@ -258,7 +258,7 @@ server <- function(input, output, session) {
         geom_col(show.legend = FALSE) +
         scale_y_continuous(labels = percent_format()) +
         scale_fill_brewer(palette = "Set2") +
-        labs(title = paste("Distribution —", lbl), x = lbl, y = "Proportion") +
+        labs(title = paste("Distribution —", lbl), x = NULL, y = "Proportion") +
         theme_app() +
         theme(axis.text.x = element_text(angle = 30, hjust = 1))
       ggplotly(p, tooltip = "text")
@@ -269,7 +269,7 @@ server <- function(input, output, session) {
       p <- ggplot(df_raw, aes(x = .data[[var]])) +
         geom_histogram(bins = input$expl_bins, fill = BLUE, color = "white", alpha = .85) +
         scale_y_continuous(labels = label_number(big.mark=" ")) +
-        labs(title = paste("Distribution —", lbl), x = lbl, y = "Effectif") +
+        labs(title = paste("Distribution —", lbl), x = NULL, y = "Effectif") +
         theme_app()
       ggplotly(p)
     }
