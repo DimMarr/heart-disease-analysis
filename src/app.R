@@ -170,6 +170,14 @@ ui <- dashboardPage(
       tabItem(
         "exploration",
         fluidRow(
+          box(width = 12, status = "primary",
+            p(icon("circle-info"), " Explorez la distribution de chaque variable du jeu de données.
+              Sélectionnez une variable ", strong("qualitative"), " pour obtenir un diagramme en barres
+              des proportions, ou une variable ", strong("quantitative"), " pour un histogramme dont
+              vous contrôlez le nombre de classes.")
+          )
+        ),
+        fluidRow(
           box(
             width = 3, title = "Paramètres", status = "primary", solidHeader = TRUE,
             radioButtons("expl_type", "Type de variable",
@@ -202,6 +210,16 @@ ui <- dashboardPage(
       # ── Analyse bivariée ───────────────────────────────────────────────────
       tabItem(
         "bivariate",
+        fluidRow(
+          box(width = 12, status = "warning",
+            p(icon("circle-info"), " Comparez une variable au regard de ", strong("HeartDisease"),
+              ". Pour une variable qualitative, les barres montrent la part de malades et de non-malades
+              dans chaque modalité. Pour une variable quantitative, choisissez entre un ",
+              strong("boxplot"), " (médiane + quartiles) et un ", strong("violin plot"),
+              " (forme complète de la distribution). Le filtre HeartDisease permet d'isoler
+              un sous-groupe.")
+          )
+        ),
         fluidRow(
           box(
             width = 3, title = "Paramètres", status = "warning", solidHeader = TRUE,
@@ -239,6 +257,15 @@ ui <- dashboardPage(
       # ── Facteurs de risque ─────────────────────────────────────────────────
       tabItem(
         "risque",
+        fluidRow(
+          box(width = 12, status = "danger",
+            p(icon("circle-info"), " Pour chaque facteur, le graphique principal affiche le ",
+              strong("taux de maladie cardiaque (%)"), " dans chaque modalité, trié par ordre
+              décroissant. Dépliez la section ", em("Vue d'ensemble"), " pour comparer tous les
+              facteurs binaires en un coup d'œil. La ", strong("heatmap"), " en bas croise l'âge
+              et l'état de santé général pour révéler les zones à très haut risque.")
+          )
+        ),
         fluidRow(
           box(
             width = 3, title = "Paramètres", status = "danger", solidHeader = TRUE,
@@ -281,6 +308,16 @@ ui <- dashboardPage(
       # ── Tendances ──────────────────────────────────────────────────────────
       tabItem("tendances",
         fluidRow(
+          box(width = 12, status = "primary",
+            p(icon("circle-info"), " La ", strong("courbe de prévalence"), " montre comment le taux de
+              maladie cardiaque évolue avec l'âge, séparément pour les hommes et les femmes —
+              survolez les points pour afficher les valeurs exactes. La ",
+              strong("pyramide des âges"), " en dessous représente la structure démographique de
+              l'échantillon en distinguant les cas positifs (couleurs foncées) et négatifs
+              (couleurs claires), côté Femmes à gauche et côté Hommes à droite.")
+          )
+        ),
+        fluidRow(
           box(width = 12, title = "Prévalence de la maladie cardiaque par âge et sexe",
             status = "primary", solidHeader = TRUE,
             plotlyOutput("tendances_prevalence", height = "420px")
@@ -298,10 +335,13 @@ ui <- dashboardPage(
       tabItem("comorbidites",
         fluidRow(
           box(width = 12, status = "success",
-            p("Le ", strong("score de comorbidités"), " comptabilise le nombre de facteurs de risque
-              présents parmi : Tabagisme, Alcool, AVC, Difficultés de marche, Diabète, Asthme,
-              Maladie rénale, Cancer de la peau."),
-            p(em("Score 0 = aucun facteur de risque — Score 8 = tous les facteurs présents."))
+            p(icon("circle-info"), " Le ", strong("score de comorbidités"), " est calculé pour chaque
+              patient en comptant le nombre de facteurs de risque simultanément présents parmi :
+              Tabagisme, Alcool, AVC, Difficultés de marche, Diabète, Asthme, Maladie rénale,
+              Cancer de la peau ", em("(score de 0 à 8)"), ". Le graphique de gauche montre
+              combien de patients ont chaque score. Celui de droite révèle comment le risque de
+              maladie cardiaque ", strong("augmente progressivement"), " à mesure que le score
+              s'élève.")
           )
         ),
         fluidRow(
@@ -319,8 +359,18 @@ ui <- dashboardPage(
       # ── Flux Sankey ────────────────────────────────────────────────────────
       tabItem("sankey",
         fluidRow(
+          box(width = 12, status = "info",
+            p(icon("circle-info"), " Un ", strong("diagramme de Sankey"), " représente des flux :
+              chaque bande est proportionnelle au nombre de patients qui passent d'une catégorie
+              à l'autre. Sélectionnez deux variables intermédiaires dans le panneau gauche pour
+              construire la chaîne ", em("Variable 1 → Variable 2 → HeartDisease"), " et
+              visualiser comment les patients se répartissent à chaque étape.
+              Survolez les nœuds ou les liens pour afficher les effectifs.")
+          )
+        ),
+        fluidRow(
           box(width = 3, title = "Paramètres", status = "info", solidHeader = TRUE,
-            p(em("Visualisez les flux de patients à travers deux variables successives jusqu'à HeartDisease.")),
+            p(em("Choisissez les deux variables intermédiaires.")),
             selectInput("sankey_v1", "1ère variable", choices = vars_sankey, selected = "Sex"),
             selectInput("sankey_v2", "2ème variable", choices = vars_sankey, selected = "Smoking"),
             hr(),
@@ -335,6 +385,18 @@ ui <- dashboardPage(
       # ── Profil patient ─────────────────────────────────────────────────────
       tabItem(
         "profil",
+        fluidRow(
+          box(width = 12, status = "info",
+            p(icon("circle-info"), " Définissez un profil patient à gauche en renseignant ses
+              caractéristiques (âge, sexe, habitudes de vie, antécédents). L'application filtre
+              les patients du jeu de données qui correspondent à ce profil et compare leur ",
+              strong("taux de maladie cardiaque"), " au taux global de la population.
+              Le résumé coloré indique si le profil est à risque élevé ",
+              span("(rouge)", style="color:#C62828;font-weight:bold;"), ", modéré ",
+              span("(orange)", style="color:#F57F17;font-weight:bold;"), " ou faible ",
+              span("(vert)", style="color:#2E7D32;font-weight:bold;"), ".")
+          )
+        ),
         fluidRow(
           box(width = 4, title = "Paramètres du profil", status = "info", solidHeader = TRUE,
             sliderInput("p_age",  "Tranche d'âge (indice 1–13)", min = 1, max = 13, value = 7),
