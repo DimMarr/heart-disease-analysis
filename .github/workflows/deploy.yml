@@ -38,13 +38,27 @@ jobs:
       - name: Setup Pandoc
         uses: r-lib/actions/setup-pandoc@v1
 
+      - name: Setup TinyTeX
+        uses: r-lib/actions/setup-tinytex@v2
+
       - name: Install R packages
         run: Rscript -e "install.packages(c('rmarkdown','knitr','dplyr','ggplot2','tidyr','scales','kableExtra','corrplot','forcats','broom','gridExtra'))"
 
-      - name: Render rapport.Rmd → index.html
+      - name: Render rapport.Rmd -> index.html
         run: |
           mkdir -p docs
           Rscript -e "rmarkdown::render('src/rapport.Rmd', output_dir='docs', output_file='index.html')"
+
+      - name: Render rapport.Rmd -> PDF
+        run: |
+          Rscript -e "rmarkdown::render('src/rapport.Rmd', output_format='pdf_document', output_dir='docs', output_file='rapport.pdf')"
+
+      - name: Upload PDF artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rapport-pdf
+          path: docs/rapport.pdf
+          retention-days: 30
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
