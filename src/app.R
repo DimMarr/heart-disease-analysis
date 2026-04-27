@@ -343,11 +343,7 @@ ui <- dashboardPage(
             p(icon("circle-info"), " Définissez un profil patient à gauche en renseignant ses
               caractéristiques (âge, sexe, habitudes de vie, antécédents). L'application filtre
               les patients du jeu de données qui correspondent à ce profil et compare leur ",
-              strong("taux de maladie cardiaque"), " au taux global de la population.
-              Le résumé coloré indique si le profil est à risque élevé ",
-              span("(rouge)", style="color:#C62828;font-weight:bold;"), ", modéré ",
-              span("(orange)", style="color:#F57F17;font-weight:bold;"), " ou faible ",
-              span("(vert)", style="color:#2E7D32;font-weight:bold;"), ".")
+              strong("taux de maladie cardiaque"), " au taux global de la population.")
           )
         ),
         fluidRow(

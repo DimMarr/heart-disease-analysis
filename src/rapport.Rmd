@@ -497,19 +497,4 @@ L'analyse du jeu de données BRFSS 2020 met en évidence plusieurs facteurs fort
 - **L'activité physique** apparaît comme facteur protecteur.
 - Le déséquilibre de classe (`r pct_malade`% de cas positifs) limite la portée prédictive d'un modèle simple et invite à des méthodes de rééquilibrage pour une modélisation approfondie.
 
----
 
-# Annexe {-}
-
-```{r annexe, echo=TRUE, eval=FALSE}
-# Fonction utilitaire : calcul du taux de HeartDisease par variable catégorielle
-taux_maladie <- function(data, var) {
-  data %>%
-    group_by(.data[[var]], HeartDisease) %>%
-    summarise(n = n(), .groups = "drop") %>%
-    group_by(.data[[var]]) %>%
-    mutate(pct = n / sum(n)) %>%
-    filter(HeartDisease == "Yes") %>%
-    arrange(desc(pct))
-}
-```
