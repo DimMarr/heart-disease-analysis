@@ -1,0 +1,16 @@
+services:
+
+  # Application R Shiny — image pré-buildée depuis GHCR
+  shiny:
+    image: ghcr.io/dimmarr/heart-disease-analysis-shiny:latest
+    expose:
+      - "3838"
+    restart: unless-stopped
+
+  frontend:
+    image: ghcr.io/dimmarr/heart-disease-analysis-frontend:latest
+    ports:
+      - "80:80"
+    depends_on:
+      - shiny
+    restart: unless-stopped
