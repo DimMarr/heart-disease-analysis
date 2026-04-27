@@ -27,6 +27,18 @@ projet/
 └── README.md
 ```
 
+### Télécharger le rapport en local
+
+À chaque build, le fichier HTML et le PDF sont disponibles en téléchargement direct depuis GitHub Actions :
+
+1. Aller dans l'onglet **Actions** du dépôt
+2. Cliquer sur le dernier run **Deploy rapport to GitHub Pages**
+3. En bas de la page, section **Artifacts** :
+   - `rapport-html` — fichier `index.html` à ouvrir dans un navigateur
+   - `rapport-pdf` — version PDF du rapport
+
+Les artifacts sont conservés **30 jours** après chaque build.
+
 ## Lancement via Docker
 
 ### Prérequis
@@ -84,19 +96,13 @@ docker compose down
 Le rapport est automatiquement rendu et déployé sur **GitHub Pages** à chaque push sur `main`
 (si `src/rapport.Rmd` ou `data/` ont changé).
 
-### Activation (une seule fois)
-
-1. Aller dans **Settings → Pages** du dépôt GitHub
-2. Source : **GitHub Actions**
-
-Le rapport sera disponible à `https://<user>.github.io/heart-disease-analysis/`.
 
 ## CI/CD — GHCR (images Docker)
 
 Les images Docker sont buildées et poussées automatiquement vers le **GitHub Container Registry**
 à chaque push sur `main` (si les sources ou les Dockerfiles ont changé).
 
-Les images publiées sont :
+Les images publiées sont :### Activation (une seule fois)1. Aller dans **Settings → Pages** du dépôt GitHub2. Source : **GitHub Actions**Le rapport sera disponible à `https://<user>.github.io/heart-disease-analysis/`.
 
 | Image | Description |
 |-------|-------------|
