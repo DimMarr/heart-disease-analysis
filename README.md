@@ -32,9 +32,9 @@ projet/
 À chaque build, le fichier HTML et le PDF sont disponibles en téléchargement direct depuis GitHub Actions :
 
 1. Aller dans l'onglet **Actions** du dépôt
-2. Cliquer sur le dernier run **Deploy rapport to GitHub Pages**
+2. Cliquer sur le dernier run
 3. En bas de la page, section **Artifacts** :
-   - `rapport-html` — fichier `index.html` à ouvrir dans un navigateur
+   - `rapport-html` — fichier  à ouvrir dans un navigateur
    - `rapport-pdf` — version PDF du rapport
 
 Les artifacts sont conservés **30 jours** après chaque build.
